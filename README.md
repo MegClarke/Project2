@@ -1,6 +1,6 @@
 # You Spin Me Round Robin
 
-This module simulates a round robin scheduling for a given workload and quantum length. It outputs the verage waiting & response time.
+This module simulates a round robin scheduling for a given workload and quantum length. It outputs the average waiting and response time.
 
 ## Building
 
@@ -13,11 +13,13 @@ make
 ./rr processes.txt 3
 ```
 processes.txt:
+```shell
 4
 1,0,7
 2,2,4
 3,4,1
 4,5,4
+```
 
 quantum length: 3
 
