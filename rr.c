@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
         finished++;
         executing->waiting_time = t - executing->arrival_time - executing->burst_time;
         total_waiting_time += t - executing->arrival_time - executing->burst_time;
-        //free(executing);
+        free(executing);
         executing = NULL;
       }
       else if(been_executing == quantum_length){
