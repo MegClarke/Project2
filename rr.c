@@ -165,73 +165,142 @@ int main(int argc, char *argv[])
 
   /* Your code here */
 
-  int t = 0;
-  int finished = 0;
-  struct process* executing = NULL;
-  int been_executing = 0;
+  // int t = 0;
+  // int finished = 0;
+  // struct process* executing = NULL;
+  // int been_executing = 0;
 
-  while(finished < size){
-    //add to queue if time == arrival time;
-    for(int i = 0; i < size; i++){
-      if (data[i].arrival_time == t){
-        data[i].remaining_time = data[i].burst_time;
-        struct process* new_process = malloc(sizeof(struct process));
-        *new_process = data[i];
-        TAILQ_INSERT_TAIL(&list, new_process, pointers);
-      }
-    }
+  // while(finished < size){
+  //   //add to queue if time == arrival time;
+  //   for(int i = 0; i < size; i++){
+  //     if (data[i].arrival_time == t){
+  //       data[i].remaining_time = data[i].burst_time;
+  //       struct process* new_process = malloc(sizeof(struct process));
+  //       *new_process = data[i];
+  //       TAILQ_INSERT_TAIL(&list, new_process, pointers);
+  //     }
+  //   }
     
-    //currently executing something
-    if(executing != NULL){
-      executing->remaining_time--;
-      been_executing++;
-      if(executing->remaining_time <= 0){
-        finished++;
-        executing->waiting_time = t - executing->arrival_time - executing->burst_time;
-        total_waiting_time += t - executing->arrival_time - executing->burst_time;
-        free(executing);
-        executing = NULL;
-      }
-      else if(been_executing == quantum_length){
-        TAILQ_INSERT_TAIL(&list, executing, pointers);
-        executing = NULL;
+  //   //currently executing something
+  //   if(executing != NULL){
+  //     executing->remaining_time--;
+  //     been_executing++;
+  //     if(executing->remaining_time <= 0){
+  //       finished++;
+  //       executing->waiting_time = t - executing->arrival_time - executing->burst_time;
+  //       total_waiting_time += t - executing->arrival_time - executing->burst_time;
+  //       free(executing);
+  //       executing = NULL;
+  //     }
+  //     else if(been_executing == quantum_length){
+  //       TAILQ_INSERT_TAIL(&list, executing, pointers);
+  //       executing = NULL;
+  //     }
+  //   }
+
+  //   //make front of queue -> executing
+  //   if(executing == NULL){
+  //     been_executing = 0;
+  //     struct process* first = TAILQ_FIRST(&list);
+  //     if (first) {
+  //       //printf("First item value: %d\n", first->value);
+  //       executing = first;
+  //       TAILQ_REMOVE(&list, first, pointers);
+  //       if (executing->remaining_time == executing->burst_time) {
+  //         executing->start_exec_time = t;
+  //         executing->response_time = t - executing->arrival_time;
+  //         total_response_time += t - executing->arrival_time;
+  //       }
+  //     }
+  //   } 
+  //   // PRINTING FOR DEBUGGING
+  //   printf("Current time: %d\n", t);
+  //   if(executing == NULL){
+  //     printf("Executing: %s\n", "NONE");
+  //   }
+  //   else{
+  //     printf("Executing: %u\n", executing->pid);
+  //   }
+    
+  //   struct process* curr_process;
+  //   TAILQ_FOREACH(curr_process, &list, pointers) {
+  //     printf("Process ID: %u\n", curr_process->pid);
+  //   }
+
+  //   t++;                  
+  // }
+
+  // //don't forget to free the process when done
+
+  u32 current_time = 0;
+  u32 process_count = 0;
+  int isFinished = 0;
+  struct process* current = NULL;
+  int time_executed = 0;
+  
+
+  // keep track of the current running time (how much time left) for running process
+  // Is there any process that's currently running?
+
+  while (isFinished < size) {
+    // check incoming @ current timestep (or within the time range that the current process is on)
+    for (u32 i = 0; i < size; ++i) {
+      if (current_time == data[i].arrival_time) {
+        data[i].remaining_time = data[i].burst_time;
+        TAILQ_INSERT_TAIL(&list, &data[i], pointers);
+        //printf("%d", );
       }
     }
 
-    //make front of queue -> executing
-    if(executing == NULL){
-      been_executing = 0;
-      struct process* first = TAILQ_FIRST(&list);
-      if (first) {
-        //printf("First item value: %d\n", first->value);
-        executing = first;
-        TAILQ_REMOVE(&list, first, pointers);
-        if (executing->remaining_time == executing->burst_time) {
-          executing->start_exec_time = t;
-          executing->response_time = t - executing->arrival_time;
-          total_response_time += t - executing->arrival_time;
+    // Add all processes that are newly incoming and init their internal information (i.e. remaining time)
+    if(current != NULL){
+      time_executed++;
+      current->remaining_time--;
+
+      // Requeue if not finished and been quantum time
+      if ( current->remaining_time > 0 ) {
+        if (time_executed == quantum_length) {
+          TAILQ_INSERT_TAIL(&list, current, pointers);
+          current = NULL;
+        }
+      //if finished
+      } else {
+        total_waiting_time += current_time - current->arrival_time - current->burst_time;
+        total_response_time += current->response_time;
+
+        // printf("response: %d\n", total_response_time);
+        //free(current);
+        current = NULL;
+        process_count++;
+        isFinished++;
+      }
+    }
+
+    if(current == NULL){
+      time_executed = 0;
+
+      // Pop the first process and process that.
+      struct process *proc = TAILQ_FIRST(&list);
+      if(proc){
+
+        // printf("hi");
+        current = proc;
+        TAILQ_REMOVE(&list, proc, pointers);
+
+        if (current->remaining_time == current->burst_time) {
+
+          // printf("hello");
+          proc->response_time = current_time - proc->arrival_time;
+          // total_response_time += proc->response_time;
+          // printf("response2: %d\n", total_response_time);
+
         }
       }
-    } 
-    /* PRINTING FOR DEBUGGING
-    printf("Current time: %d\n", t);
-    if(executing == NULL){
-      printf("Executing: %s\n", "NONE");
     }
-    else{
-      printf("Executing: %u\n", executing->pid);
-    }
-    
-    struct process* curr_process;
-    TAILQ_FOREACH(curr_process, &list, pointers) {
-      printf("Process ID: %u\n", curr_process->pid);
-    }
-    */
 
-    t++;                  
+    current_time++;
   }
 
-  //don't forget to free the process when done
 
   /* End of "Your code here" */
 
